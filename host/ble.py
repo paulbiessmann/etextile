@@ -187,6 +187,7 @@ class Application(QtCore.QCoreApplication):
 
 if __name__ == "__main__":
     if sys.platform == "darwin":
+        import os
         os.environ["QT_EVENT_DISPATCHER_CORE_FOUNDATION"] = "1"
 
     app = Application(sys.argv)
