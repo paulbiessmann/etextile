@@ -2,6 +2,7 @@
 import signal
 import sys
 import time
+import struct
 
 from PyQt5 import QtBluetooth as QtBt
 from PyQt5 import QtCore
@@ -70,10 +71,11 @@ class EtextileServiceHandler(ServiceHandler):
         super().__init__(device, uuid)
 
     def characteristicChanged(self, char, data):
-        now = time.time()
-        print("etextile data:", self.device.address, data, now - self.last)
-        self.last = now
+        array = struct.unpack("H" * int((len(data) / 2)), data)
+        EtextileServiceHandler.etextile_handle_data(self.device.address, array)
 
+    def etextile_handle_data(device_address, data):
+        print("etextile data:", device_address, data)
 
 class DeviceConnection(object):
     def __init__(self, app, device, service_handlers):
@@ -155,12 +157,12 @@ class Application(QtCore.QCoreApplication):
         print("error():", qenum_key(QtBt.QBluetoothDeviceDiscoveryAgent, error))
 
     def finished(self, *args, **kwargs):
-        print("finished", args, kwargs)
         for device in self.agent.discoveredDevices():
             if device.name().startswith("RIOT"):
                 if device.address().toString() not in self.connections:
                     connection = DeviceConnection(self, device, self.service_handlers)
                     connection.connect()
+
         self.agent.start()
 
     def scan_for_devices(self):
@@ -177,9 +179,14 @@ class Application(QtCore.QCoreApplication):
         self.agent.start()
 
 
+# provide
+#def handle_data(addr, array):
+#    print(addr, array)
+#
+#EtextileServiceHandler.etextile_handle_data = handle_data
+
 if __name__ == "__main__":
     if sys.platform == "darwin":
         os.environ["QT_EVENT_DISPATCHER_CORE_FOUNDATION"] = "1"
-
 
     app = Application(sys.argv)
