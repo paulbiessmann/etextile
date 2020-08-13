@@ -26,6 +26,12 @@
 #define UPDATE_INTERVAL         (100U * US_PER_MS)
 #define BAT_LEVEL               (42U)
 
+#include "periph/adc.h"
+#define ADC_RES             ADC_RES_10BIT
+
+static const adc_t adc_lines[] = { 0, 5, 1, 2, 3, 6 };
+static const unsigned adc_lines_numof = ARRAY_SIZE(adc_lines);
+
 static const char *_device_name = "RIOT eTextile Sensor";
 static const char *_manufacturer_name = "riot-os.org";
 static const char *_model_number = "2A";
@@ -34,9 +40,7 @@ static const char *_fw_ver = "0.0.0";
 static const char *_hw_ver = "0.0.0";
 
 static struct __attribute__((packed)) {
-    uint16_t value;
-    uint16_t values[15];
-    uint16_t values2[16];
+    uint16_t values[ARRAY_SIZE(adc_lines)];
 } _etextile_data = { 0 };
 
 static event_queue_t _eq;
@@ -259,9 +263,14 @@ static void _sensor_update(event_t *e)
     (void)e;
     struct os_mbuf *om;
 
-    _etextile_data.value++;
-
-    printf("[NOTIFY] etextile sensor service: measurement %i\n", (int)_etextile_data.value);
+    /* read all ADC */
+    for (unsigned i = 0; i < adc_lines_numof; i++) {
+        int32_t sample = adc_sample(adc_lines[i], ADC_RES);
+        if (sample < 0) {
+            sample = 0;
+        }
+        _etextile_data.values[i] = sample;
+    }
 
     /* send etextile sensor data notification to GATT client */
     om = ble_hs_mbuf_from_flat(&_etextile_data, sizeof(_etextile_data));
@@ -278,12 +287,27 @@ static void _sensor_update(event_t *e)
     event_timeout_set(&_update_timeout_evt, UPDATE_INTERVAL);
 }
 
+static void _sensors_init(void)
+{
+    /* initialize all available ADC lines */
+    for (unsigned i = 0; i < adc_lines_numof; i++) {
+        if (adc_init(adc_lines[i]) < 0) {
+            printf("Initialization of ADC_LINE(%u) failed\n", i);
+        }
+        else {
+            printf("Successfully initialized ADC_LINE(%u)\n", i);
+        }
+    }
+}
+
 int main(void)
 {
     puts("RIOT eTextile sensor");
 
     int res = 0;
     (void)res;
+
+    _sensors_init();
 
     /* setup local event queue (for handling etextile sensor updates) */
     event_queue_init(&_eq);
