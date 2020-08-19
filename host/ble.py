@@ -67,6 +67,7 @@ class ServiceHandler(object):
 
 class EtextileServiceHandler(ServiceHandler):
     uuid = "{00004e20-0000-1000-8000-00805f9b34fb}"
+    
     def __init__(self, device, uuid):
         super().__init__(device, uuid)
 
@@ -80,7 +81,10 @@ class EtextileServiceHandler(ServiceHandler):
 class DeviceConnection(object):
     def __init__(self, app, device, service_handlers):
         self.app = app
-        self.address = device.address().toString()
+        if sys.platform != "darwin":
+            self.address = device.address().toString()
+        else:
+            self.address = device.deviceUuid().toString()
 
         self.service_handlers = {}
         for s in service_handlers:
@@ -140,6 +144,7 @@ class Application(QtCore.QCoreApplication):
         super().__init__(*args, **kwargs)
         self.service_handlers = [EtextileServiceHandler]
         self.connections = {}
+        self.riotUuid = ''
         self.scan_for_devices()
         self.exec()
 
@@ -148,20 +153,29 @@ class Application(QtCore.QCoreApplication):
 
     def device_discovered(self, device):
         #Application.device_print(device)
+        if device.name().startswith("RIOT"):
+            self.riotUuid = device.deviceUuid().toString()
         pass
 
     def device_print(device):
-        print (device.address().toString(), device.name())
+        print(device.address().toString(), device.name(), '\t', device.deviceUuid().toString())
 
     def error(self, error):
         print("error():", qenum_key(QtBt.QBluetoothDeviceDiscoveryAgent, error))
 
     def finished(self, *args, **kwargs):
         for device in self.agent.discoveredDevices():
-            if device.name().startswith("RIOT"):
-                if device.address().toString() not in self.connections:
-                    connection = DeviceConnection(self, device, self.service_handlers)
-                    connection.connect()
+            if sys.platform != "darwin":
+                if device.name().startswith("RIOT"):
+                    if device.address().toString() not in self.connections:
+                        connection = DeviceConnection(self, device, self.service_handlers)
+                        connection.connect()
+            else:
+                #on OSX the name can't be read, so use the Uudi
+                if device.deviceUuid().toString() == self.riotUuid:
+                    if device.deviceUuid().toString() not in self.connections:
+                        connection = DeviceConnection(self, device, self.service_handlers)
+                        connection.connect()
 
         self.agent.start()
 
@@ -189,5 +203,6 @@ if __name__ == "__main__":
     if sys.platform == "darwin":
         import os
         os.environ["QT_EVENT_DISPATCHER_CORE_FOUNDATION"] = "1"
+
 
     app = Application(sys.argv)
