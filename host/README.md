@@ -18,8 +18,12 @@ This folder contains the eTextile host application
 
 ## OS X prerequisites:
     
-- Install the required python packages with pip install -r requirements.txt in the folder of the downloaded github repo
+- Install the required python packages with ``pip install -r requirements.txt`` in the folder of the downloaded github repo
 
 # Run
 
     python3 ble.py
+    
+# Examples
+
+Use `udpReceiver.pd` for PureData or `pb_eTextile_rcv_V01.amxd` for Max4Live as example how to receive data. 
