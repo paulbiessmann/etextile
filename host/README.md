@@ -17,11 +17,8 @@ This folder contains the eTextile host application
 
 
 ## OS X prerequisites:
-
-- PyQt5 (version >= 5.15.0)
-
-    pip3 install pyqt5
-
+    
+- Install the required python packages with pip install -r requirements.txt in the folder of the downloaded github repo
 
 # Run
 
