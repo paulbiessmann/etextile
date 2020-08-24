@@ -67,7 +67,6 @@ class ServiceHandler(object):
 
 class EtextileServiceHandler(ServiceHandler):
     uuid = "{00004e20-0000-1000-8000-00805f9b34fb}"
-    
     def __init__(self, device, uuid):
         super().__init__(device, uuid)
 
@@ -144,7 +143,7 @@ class Application(QtCore.QCoreApplication):
         super().__init__(*args, **kwargs)
         self.service_handlers = [EtextileServiceHandler]
         self.connections = {}
-        self.riotUuid = ''
+        self.riotUuid = []
         self.scan_for_devices()
         self.exec()
 
@@ -154,7 +153,8 @@ class Application(QtCore.QCoreApplication):
     def device_discovered(self, device):
         #Application.device_print(device)
         if device.name().startswith("RIOT"):
-            self.riotUuid = device.deviceUuid().toString()
+            if device.deviceUuid().toString() not in self.riotUuid:
+                self.riotUuid.append(device.deviceUuid().toString())
         pass
 
     def device_print(device):
@@ -172,7 +172,7 @@ class Application(QtCore.QCoreApplication):
                         connection.connect()
             else:
                 #on OSX the name can't be read, so use the Uudi
-                if device.deviceUuid().toString() == self.riotUuid:
+                if device.deviceUuid().toString() in self.riotUuid:
                     if device.deviceUuid().toString() not in self.connections:
                         connection = DeviceConnection(self, device, self.service_handlers)
                         connection.connect()
