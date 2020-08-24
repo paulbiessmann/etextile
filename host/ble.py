@@ -3,6 +3,10 @@ import signal
 import sys
 import time
 import struct
+from textile_udpclient import UdpInstance
+from pythonosc import udp_client
+import socket
+import numpy as np
 
 from PyQt5 import QtBluetooth as QtBt
 from PyQt5 import QtCore
@@ -38,7 +42,6 @@ class ServiceHandler(object):
                 if ServiceHandler.supportsNotify(c):
                     self.enableNotify(c)
 
-
     def supportsNotify(char):
         return char.properties() & 0x10
 
@@ -53,7 +56,6 @@ class ServiceHandler(object):
 
     def characteristicChanged(self, char, data):
         print("Sevice.characteristicChanged()", self.device.address, self.uuid.toString(), data, now - self.last)
-
 
     def descriptorWritten(self, desc, data):
         print("Sevice.descriptorWritten()", self.device.address, self.uuid.toString(), desc, data)
@@ -194,15 +196,22 @@ class Application(QtCore.QCoreApplication):
 
 
 # provide
-#def handle_data(addr, array):
-#    print(addr, array)
-#
-#EtextileServiceHandler.etextile_handle_data = handle_data
+def handle_data(addr, array):
+    print(addr, array)
+    udp.sendUdp(array, addr)
+
+EtextileServiceHandler.etextile_handle_data = handle_data
 
 if __name__ == "__main__":
     if sys.platform == "darwin":
         import os
         os.environ["QT_EVENT_DISPATCHER_CORE_FOUNDATION"] = "1"
 
+    # setup OSC client
+    localIP = "127.0.0.1"
+    localPortSender = 7001
+    udp = UdpInstance(localIP, localPortSender, "firstSender")
 
     app = Application(sys.argv)
+
+
