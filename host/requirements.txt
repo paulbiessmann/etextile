@@ -1,3 +1,4 @@
+pyqt5
 scikit-learn==0.22
 python-osc
 

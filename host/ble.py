@@ -210,8 +210,15 @@ if __name__ == "__main__":
     # setup OSC client
     localIP = "127.0.0.1"
     localPortSender = 7001
+
+    if len(sys.argv) > 1:
+        localPortSender = int(sys.argv[1])
+
+    print("set port to ", localPortSender)
+
     udp = UdpInstance(localIP, localPortSender, "firstSender")
 
     app = Application(sys.argv)
 
+    udp.close()
 

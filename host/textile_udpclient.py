@@ -15,7 +15,8 @@ class UdpInstance:
     def sendUdp(self, message, riotAddr):
         # print(self.name, message)
         # send prediction to server
-        self.osc_client.send_message(riotAddr, message)
+        #self.osc_client.send_message(riotAddr, message)
+        self.osc_client.send_message("/data", message)
 
     def close(self):
         UDPClientSocket.close()
