@@ -13,6 +13,7 @@ from PyQt5 import QtCore
 
 from qenum import qenum_key
 
+
 class ServiceHandler(object):
     def __init__(self, device, uuid):
         self.device = device
@@ -59,7 +60,7 @@ class ServiceHandler(object):
 
     def descriptorWritten(self, desc, data):
         print("Sevice.descriptorWritten()", self.device.address, self.uuid.toString(), desc, data)
-    
+
     def descriptorRead(self, *args, **kwargs):
         print("Sevice.descriptorRead()", self.device.address, self.uuid.toString(), args, kwargs)
 
@@ -69,15 +70,25 @@ class ServiceHandler(object):
 
 class EtextileServiceHandler(ServiceHandler):
     uuid = "{00004e20-0000-1000-8000-00805f9b34fb}"
+
     def __init__(self, device, uuid):
         super().__init__(device, uuid)
 
     def characteristicChanged(self, char, data):
         array = struct.unpack("H" * int((len(data) / 2)), data)
-        EtextileServiceHandler.etextile_handle_data(self.device.address, array)
+        EtextileServiceHandler.etextile_handle_data(self.device_number(self.device.address), array)
 
     def etextile_handle_data(device_address, data):
         print("etextile data:", device_address, data)
+
+    # convert address to Riot1 Riot2 etc:
+    def device_number(self, i):
+        if device_name_dict.get(i) is None:
+            new_device_num = 'Riot' + str(len(device_name_dict) + 1)
+            device_name_dict[i] = new_device_num
+            print("Unknown Riot device added" + i + " - gets Number " + new_device_num)
+        return device_name_dict.get(i, "Invalid device. Add to List!")
+
 
 class DeviceConnection(object):
     def __init__(self, app, device, service_handlers):
@@ -153,7 +164,7 @@ class Application(QtCore.QCoreApplication):
         pass
 
     def device_discovered(self, device):
-        #Application.device_print(device)
+        # Application.device_print(device)
         if device.name().startswith("RIOT"):
             if device.deviceUuid().toString() not in self.riotUuid:
                 self.riotUuid.append(device.deviceUuid().toString())
@@ -173,7 +184,7 @@ class Application(QtCore.QCoreApplication):
                         connection = DeviceConnection(self, device, self.service_handlers)
                         connection.connect()
             else:
-                #on OSX the name can't be read, so use the Uudi
+                # on OSX the name can't be read, so use the Uudi
                 if device.deviceUuid().toString() in self.riotUuid:
                     if device.deviceUuid().toString() not in self.connections:
                         connection = DeviceConnection(self, device, self.service_handlers)
@@ -196,20 +207,28 @@ class Application(QtCore.QCoreApplication):
 
 
 # provide
-def handle_data(addr, array):
-    print(addr, array)
-    udp.sendUdp(array, addr)
+def handle_data(device_num, array):
+    print(device_num, array)
+    udp.sendUdp(device_num, array)
+
 
 EtextileServiceHandler.etextile_handle_data = handle_data
 
 if __name__ == "__main__":
     if sys.platform == "darwin":
         import os
+
         os.environ["QT_EVENT_DISPATCHER_CORE_FOUNDATION"] = "1"
 
     # setup OSC client
     localIP = "127.0.0.1"
     localPortSender = 7001
+    device_name_dict = {
+        # List of device names, add here:
+        "{94e00f41-7d5a-4851-bd0a-1f7e02c1350f}": 'Riot1',
+        "{0b0b4431-b150-4279-9f6a-ce112144b99e}": 'Riot2',
+        "{620eb416-51d3-47d5-a4d4-7d7233cc08ec}": 'Riot3'
+    }
 
     if len(sys.argv) > 1:
         localPortSender = int(sys.argv[1])
@@ -221,4 +240,3 @@ if __name__ == "__main__":
     app = Application(sys.argv)
 
     udp.close()
-

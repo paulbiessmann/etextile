@@ -12,11 +12,9 @@ class UdpInstance:
         self.UDPClientSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
         print("UDP sending client ready")
 
-    def sendUdp(self, message, riotAddr):
-        # print(self.name, message)
+    def sendUdp(self, riotNum, message):
         # send prediction to server
-        #self.osc_client.send_message(riotAddr, message)
-        self.osc_client.send_message("/data", message)
+        self.osc_client.send_message("/" + riotNum, message)
 
     def close(self):
         UDPClientSocket.close()
